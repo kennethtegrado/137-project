@@ -6,19 +6,20 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class ClientConnection {
-    private static final String SERVER_IP = "192.168.1.27"; // Replace with your server's IP address
     private static final int SERVER_PORT = 4000; // Replace with your server's port number
 
+    private String serverIP;
     private int roomId;
     private Socket socket;
     private DataOutputStream outputStream;
     private DataInputStream inputStream;
     private Game game;
 
-    public ClientConnection(Game game) {
+    public ClientConnection(Game game, String serverIP) {
+        this.serverIP = serverIP;
         this.game = game;
         try {
-            socket = new Socket(SERVER_IP, SERVER_PORT);
+            socket = new Socket(serverIP, SERVER_PORT);
             outputStream = new DataOutputStream(socket.getOutputStream());
             inputStream = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {

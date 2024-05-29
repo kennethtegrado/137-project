@@ -22,6 +22,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.io.File;
+import java.util.Scanner;
 
 public class Game {
     private Stage stage;
@@ -34,7 +35,7 @@ public class Game {
     private AnimationTimer animationTimer; // Declare AnimationTimer as a class member
     private int numPlayers = 1;
     private final int maxPlayers = 4;
-    private ClientConnection connection = new ClientConnection(this);
+    private ClientConnection connection = createConnection();
     public final static int WINDOW_WIDTH = 1500;
     public final static int WINDOW_HEIGHT = 800;
     private String username = "NEXT";
@@ -102,6 +103,13 @@ public class Game {
         animationTimer.start();
 
         return canvas;
+    }
+
+    ClientConnection createConnection() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter Server's IP Address: ");
+        String serverIP = sc.nextLine();
+        return new ClientConnection(this, serverIP);
     }
 
     // Method to draw the background image with scrolling effect
