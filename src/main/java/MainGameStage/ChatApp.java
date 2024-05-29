@@ -23,6 +23,10 @@ public class ChatApp extends Application {
         this.username = username;
     }
 
+    public void setUsername(String newName) {
+        this.username = newName;
+    }
+
     public void appendMessage(String message) {
         messages.appendText(message + "\n");
     }
@@ -37,7 +41,7 @@ public class ChatApp extends Application {
         input.setPromptText("Press \'/\' to open the chat");
         input.setStyle("-fx-control-inner-background: #343434; -fx-prompt-text-fill: #aeaeae");
         input.setOnAction(event -> {
-            String message = "SEND_CHAT " + username + ":";
+            String message = "SEND_CHAT " + username + ": ";
             message += input.getText();
             input.clear();
             connection.send(message);

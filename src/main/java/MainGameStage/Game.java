@@ -38,7 +38,7 @@ public class Game {
     private ClientConnection connection = createConnection();
     public final static int WINDOW_WIDTH = 1500;
     public final static int WINDOW_HEIGHT = 800;
-    private String username = "NEXT";
+    private String username = "Server";
     private int roomId;
     private GameTimer gameTimer;
 
@@ -214,6 +214,7 @@ public class Game {
                 input.setOnKeyPressed(event -> {
                     if (event.getCode() == KeyCode.ENTER) {
                         username = input.getText();
+                        chat.setUsername(username);
                         System.out.println("Username: " + username);
                         VBox chatBox = chat.createContent();
                         chatBox.setPadding(new Insets(0, 64, 0, 64));
