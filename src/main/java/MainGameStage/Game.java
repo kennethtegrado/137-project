@@ -159,7 +159,7 @@ public class Game {
         joinGameView.setFitHeight(70);
         joinGameView.setFitWidth(200);
         joinGameView.setPreserveRatio(true);
-
+        
         Button b1 = new Button();
         b1.setStyle("-fx-background-color: blue");
         b1.setPrefSize(220, 70);
@@ -175,76 +175,99 @@ public class Game {
         b3.setPrefSize(220, 70);
         b3.setGraphic(startGameView);
 
-        vbox.getChildren().addAll(b1, b2);
-        Client client = new Client(this);
-        Thread clientThread = new Thread(client);
 
-        b1.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                roomId = connection.createRoom(); // update roomId
-                VBox chatBox = chat.createContent();
-                chatBox.setPadding(new Insets(0, 64, 0, 64));
-                StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
-                root.getChildren().add(chatBox);
-                b1.setVisible(false);
-                b2.setVisible(false);
+        TextField input = new TextField();
+        input.setPromptText("Enter your username");
+        input.setPrefHeight(50); 
+        input.setMaxWidth(600);  
+        input.setStyle("-fx-control-inner-background: #343434; "
+                    + "-fx-prompt-text-fill: #aeaeae; "
+                    + "-fx-border-color: blue; " 
+                    + "-fx-border-width: 8px; " 
+                    + "-fx-border-radius: 8px; "
+                    + "-fx-font-size: 36px");
+        input.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                username = input.getText();
+                chat.setUsername(username);
+                System.out.println("Username: " + username);
+                
                 vbox.getChildren().clear();
-                vbox.getChildren().addAll(title, b3);
-                vbox.setSpacing(155);
-                clientThread.start();
-            }
-        });
+                vbox.getChildren().addAll(title, b1, b2);
+                vbox.setSpacing(40);
 
-        b2.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                connection.joinRoom(1);
-                // TODO: HANDLE -1 roomId
-                TextField input = new TextField();
-                input.setPromptText("Enter your username");
-                input.setPrefHeight(50); 
-                input.setMaxWidth(600);  
-                input.setStyle("-fx-control-inner-background: #343434; "
-                            + "-fx-prompt-text-fill: #aeaeae; "
-                            + "-fx-border-color: blue; " 
-                            + "-fx-border-width: 8px; " 
-                            + "-fx-border-radius: 8px; "
-                            + "-fx-font-size: 36px");
-                input.setOnKeyPressed(event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        username = input.getText();
-                        chat.setUsername(username);
-                        System.out.println("Username: " + username);
+                Client client = new Client(this);
+                Thread clientThread = new Thread(client);
+
+                b1.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent e) {
+                        roomId = connection.createRoom(); // update roomId
                         VBox chatBox = chat.createContent();
                         chatBox.setPadding(new Insets(0, 64, 0, 64));
                         StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
                         root.getChildren().add(chatBox);
                         b1.setVisible(false);
                         b2.setVisible(false);
-
-                        Label infoLabel = new Label("Waiting for players...");
-                        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
-                        infoLabel.setTextFill(Color.WHITE);
                         vbox.getChildren().clear();
-                        vbox.getChildren().addAll(title, infoLabel);
-                        vbox.setSpacing(172);
-
+                        vbox.getChildren().addAll(title, b3);
+                        vbox.setSpacing(155);
                         clientThread.start();
                     }
                 });
-                vbox.getChildren().clear();
-                vbox.getChildren().addAll(title, input);
-                vbox.setSpacing(136);
+        
+                b2.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent e) {
+                        TextField inputRoomId = new TextField();
+                        inputRoomId.setPromptText("Enter Room ID");
+                        inputRoomId.setPrefHeight(50); 
+                        inputRoomId.setMaxWidth(600);  
+                        inputRoomId.setStyle("-fx-control-inner-background: #343434; "
+                                    + "-fx-prompt-text-fill: #aeaeae; "
+                                    + "-fx-border-color: blue; " 
+                                    + "-fx-border-width: 8px; " 
+                                    + "-fx-border-radius: 8px; "
+                                    + "-fx-font-size: 36px");
+                        inputRoomId.setOnKeyPressed(event -> {
+                            if (event.getCode() == KeyCode.ENTER) {
+                                roomId = Integer.parseInt(inputRoomId.getText());
+                                connection.joinRoom(roomId);
+                                
+                                VBox chatBox = chat.createContent();
+                                chatBox.setPadding(new Insets(0, 64, 0, 64));
+                                StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
+                                root.getChildren().add(chatBox);
+                                b1.setVisible(false);
+                                b2.setVisible(false);
+                
+                                Label infoLabel = new Label("Waiting for players...");
+                                infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
+                                infoLabel.setTextFill(Color.WHITE);
+                                vbox.getChildren().clear();
+                                vbox.getChildren().addAll(title, infoLabel);
+                                vbox.setSpacing(172);
+                
+                                clientThread.start();
+                            }
+                        });
+                        vbox.getChildren().clear();
+                        vbox.getChildren().addAll(title, inputRoomId);
+                        vbox.setSpacing(136);
+                    }
+                });
+        
+                b3.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent e) {
+                        connection.send("START_GAME");
+                    }
+                });
             }
         });
-
-        b3.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent e) {
-                connection.send("START_GAME");
-            }
-        });
+        vbox.getChildren().clear();
+        vbox.getChildren().addAll(title, input);
+        vbox.setSpacing(136);
 
         return vbox;
     }
