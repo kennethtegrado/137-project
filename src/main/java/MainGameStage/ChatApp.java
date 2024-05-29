@@ -1,9 +1,5 @@
 package MainGameStage;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -17,28 +13,18 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 public class ChatApp extends Application {
-    private boolean isServer;
-
+    private String username;
     private TextArea messages = new TextArea();
     private TextField input = new TextField();
-    private NetworkConnection connection;
+    private ClientConnection connection;
+    
+    public ChatApp(ClientConnection connection, String username) {
+        this.connection = connection;
+        this.username = username;
+    }
 
-    public void setIsServer(boolean isServer) {
-        this.isServer = isServer;
-        connection = isServer ? createServer() : createClient();
-
-        if (connection != null) {
-            try {
-                if (isServer) {
-                    connection.startServerConnection();
-                } else {
-                    connection.startClientConnection();
-                }
-            } catch (Exception e) {
-                System.err.println("Error starting connection: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
+    public void appendMessage(String message) {
+        messages.appendText(message + "\n");
     }
 
     public VBox createContent() {
@@ -51,22 +37,10 @@ public class ChatApp extends Application {
         input.setPromptText("Press \'/\' to open the chat");
         input.setStyle("-fx-control-inner-background: #343434; -fx-prompt-text-fill: #aeaeae");
         input.setOnAction(event -> {
-            String message = isServer ? "Server: " : "Client: ";
+            String message = "SEND_CHAT " + username + ":";
             message += input.getText();
             input.clear();
-
-            messages.appendText(message + "\n");
-
-            DataPacket packet = new DataPacket(
-                    new Encryptor().enc(message.getBytes())
-            );
-
-            try {
-                connection.send(packet);
-            }
-            catch (Exception e) {
-                messages.appendText("Failed to send\n");
-            }
+            connection.send(message);
         });
 
         input.setOnKeyPressed(event -> {
@@ -90,66 +64,10 @@ public class ChatApp extends Application {
         return root;
     }
 
-    @Override
-    public void init() throws Exception {
-        if (isServer) {
-            connection.startServerConnection();
-        } else {
-            connection.startClientConnection();
-        }
-    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setScene(new Scene(createContent()));
         primaryStage.show();
-    }
-
-    @Override
-    public void stop() throws Exception {
-        connection.closeConnection();
-    }
-
-    private Server createServer() {
-        try {
-            return new Server(3000, data -> {
-                DataPacket packet = (DataPacket) data;
-                byte[] original = new Encryptor().dec(packet.getRawBytes());
-
-                Platform.runLater(() -> {
-                    messages.appendText(new String(original) + "\n");
-                });
-            });
-        } catch (Exception e) {
-            System.err.println("Error creating server: " + e.getMessage());
-            e.printStackTrace();
-            return null; // Handle this situation appropriately
-        }
-    }
-
-    public boolean getIsServer() {
-        return this.isServer;
-    }
-
-    public int getPlayers() {
-        return connection.players();
-    }
-
-    private Client createClient() {
-        try {
-            InetAddress localhost = InetAddress.getLocalHost();
-            return new Client((localhost.getHostAddress()).trim(), 3000, data -> {
-                DataPacket packet = (DataPacket) data;
-                byte[] original = new Encryptor().dec(packet.getRawBytes());
-    
-                Platform.runLater(() -> {
-                    messages.appendText(new String(original) + "\n");
-                });
-            });
-        } catch (UnknownHostException e) {
-            System.err.println("Unable to determine local host IP address.");
-            e.printStackTrace();
-            return null; // Or handle this situation appropriately
-        }
     }
 }

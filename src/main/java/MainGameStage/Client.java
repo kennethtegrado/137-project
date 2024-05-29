@@ -1,31 +1,33 @@
 package MainGameStage;
 
-import java.io.Serializable;
-import java.util.function.Consumer;
+import javafx.application.Platform;
 
-public class Client extends NetworkConnection {
+public class Client implements Runnable {
+    private Game game;
+    private volatile boolean running = true;
 
-    private String ip;
-    private int port;
+    public Client(Game game) {
+        this.game = game;
+    }
 
-    public Client(String ip, int port, Consumer<Serializable> onReceiveCallback) {
-        super(onReceiveCallback);
-        this.ip = ip;
-        this.port = port;
+    public void stop() {
+        running = false;
     }
 
     @Override
-    protected boolean isServer() {
-        return false;
-    }
-
-    @Override
-    protected String getIP() {
-        return ip;
-    }
-
-    @Override
-    protected int getPort() {
-        return port;
+    public void run() {
+        while (running) {
+            String message = game.getConnection().receive();
+            String[] result = message.split(" ");
+            String code = result[0];
+            System.out.println(message);
+            if (code.equals("START_GAME")) {  // Use equals for string comparison
+                Platform.runLater(() -> game.startGame());
+            } else if (code.equals("SEND_CHAT")) {
+                Platform.runLater(() -> game.getChat().appendMessage(result[1]));
+            }
+        }
     }
 }
+
+

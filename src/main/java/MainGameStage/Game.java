@@ -1,13 +1,5 @@
 package MainGameStage;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -38,23 +30,25 @@ public class Game {
     private Canvas canvas;         // the canvas where the animation happens
     private double bgOffsetX = 0;  // Initial X offset for the background image
     private AnimationTimer animationTimer; // Declare AnimationTimer as a class member
-    private ServerSocket serverSocket;
-    private List<Socket> clients;
-    private int numPlayers;
+    private int numPlayers = 1;
     private final int maxPlayers = 4;
-
+    private ClientConnection connection = new ClientConnection(this);
     public final static int WINDOW_WIDTH = 1500;
     public final static int WINDOW_HEIGHT = 800;
+    private String username = "NEXT";
+    private int roomId;
+    private GameTimer gameTimer;
 
     public Game() {
         this.canvas = new Canvas(Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
-        this.chat = new ChatApp();
+        this.chat = new ChatApp(connection, username);
         this.root = new StackPane();
         playStartSound();
         StackPane.setAlignment(this.canvas, Pos.CENTER);
         this.root.getChildren().addAll(this.canvas);
         this.gameScene = new Scene(this.root);
-        this.clients = new ArrayList<>();
+        GraphicsContext gc = this.canvas.getGraphicsContext2D(); // we will pass this gc to be able to draw on this Game's canvas
+        this.gameTimer = new GameTimer(this.stage, this.gameScene, gc, this.chat);
     }
 
     public void setStage(Stage stage) {
@@ -171,12 +165,13 @@ public class Game {
         b3.setGraphic(startGameView);
 
         vbox.getChildren().addAll(b1, b2);
+        Client client = new Client(this);
+        Thread clientThread = new Thread(client);
 
         b1.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                chat.setIsServer(true);
-                chat.createContent();
+                roomId = connection.createRoom(); // update roomId
                 VBox chatBox = chat.createContent();
                 chatBox.setPadding(new Insets(0, 64, 0, 64));
                 StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
@@ -186,17 +181,17 @@ public class Game {
                 vbox.getChildren().clear();
                 vbox.getChildren().addAll(title, b3);
                 vbox.setSpacing(155);
-                
-                // Start the server
-                new Thread(() -> startServer(12345)).start();
+                clientThread.start();
             }
         });
 
         b2.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                chat.setIsServer(false);
-                chat.createContent();
+                connection.joinRoom(1);
+
+                // TODO: HANDLE -1 roomId
+
                 VBox chatBox = chat.createContent();
                 chatBox.setPadding(new Insets(0, 64, 0, 64));
                 StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
@@ -211,134 +206,43 @@ public class Game {
                 vbox.getChildren().addAll(title, infoLabel);
                 vbox.setSpacing(172);
 
-                // Connect to the server
-                new Thread(() -> connectToServer("localhost", 12345)).start();
+                clientThread.start();
             }
         });
 
         b3.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                sendMessageToAllClients("START_GAME");
-                setGame(stage);
+                connection.send("START_GAME");
             }
         });
 
         return vbox;
     }
 
-    private void startServer(int port) {
-        try {
-            serverSocket = new ServerSocket(port);
-            System.out.println("Server started on port " + port);
-
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                clients.add(clientSocket);
-                System.out.println("Client connected: " + clientSocket.getRemoteSocketAddress());
-
-                new Thread(() -> handleClient(clientSocket)).start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void connectToServer(String host, int port) {
-        try {
-            Socket socket = new Socket(host, port);
-            clients.add(socket);
-            System.out.println("Connected to server");
-
-            DataInputStream dis = new DataInputStream(socket.getInputStream());
-            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-
-            new Thread(() -> {
-                try {
-                    while (true) {
-                        String serverMessage = dis.readUTF();
-                        System.out.println("Server: " + serverMessage);
-                        // Handle server message here (e.g., update game state)
-                        if (serverMessage.equals("START_GAME")) {
-                            Platform.runLater(() -> startClientGame());
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void handleClient(Socket clientSocket) {
-        try {
-            DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
-            DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
-
-            new Thread(() -> {
-                try {
-                    while (true) {
-                        String serverMessage = dis.readUTF();
-                        System.out.println("Server: " + serverMessage);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-
-            while (true) {
-                String message = dis.readUTF();
-                System.out.println("Received: " + message);
-
-                // Broadcast message to all clients
-                for (Socket socket : clients) {
-                    if (!socket.equals(clientSocket)) {
-                        DataOutputStream dosClient = new DataOutputStream(socket.getOutputStream());
-                        dosClient.writeUTF(message);
-                    }
-                }
-
-                // Server logic to send messages to the client
-                String serverMessage = "Server message to client " + clientSocket.getRemoteSocketAddress();
-                dos.writeUTF(serverMessage);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void sendMessageToAllClients(String message) {
-        for (Socket socket : clients) {
-            try {
-                DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-                dos.writeUTF(message);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void startClientGame() {
+    public void startGame() {
         if (animationTimer != null) {
             animationTimer.stop();
             stage.setScene(this.gameScene);
-
-            GraphicsContext gc = this.canvas.getGraphicsContext2D(); // we will pass this gc to be able to draw on this Game's canvas
-            GameTimer gameTimer = new GameTimer(stage, this.gameScene, gc, this.chat);
+            System.out.println("WAS HERE");
             gameTimer.start(); // this internally calls the handle() method of our GameTimer
         }
     }
 
-    void setGame(Stage stage) {
-        if (animationTimer != null) {
-            animationTimer.stop();
-            stage.setScene(this.gameScene);
+    @SuppressWarnings("exports")
+    public GameTimer getGameTimer() {
+        return this.gameTimer;
+    }
 
-            GraphicsContext gc = this.canvas.getGraphicsContext2D(); // we will pass this gc to be able to draw on this Game's canvas
-            GameTimer gameTimer = new GameTimer(stage, this.gameScene, gc, this.chat);
-            gameTimer.start(); // this internally calls the handle() method of our GameTimer   
-        }
+    public ClientConnection getConnection() {
+        return this.connection;
+    }
+
+    public ChatApp getChat() {
+        return this.chat;
+    }
+
+    public String getUsername() {
+        return this.username;
     }
 }
