@@ -11,8 +11,10 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -189,24 +191,41 @@ public class Game {
             @Override
             public void handle(ActionEvent e) {
                 connection.joinRoom(1);
-
                 // TODO: HANDLE -1 roomId
+                TextField input = new TextField();
+                input.setPromptText("Enter your username");
+                input.setPrefHeight(50); // Adjust height here
+                input.setPrefWidth(50); // Adjust width here
+                input.setMinWidth(50);  // Ensure minimum width is set
+                input.setStyle("-fx-control-inner-background: #343434; "
+                            + "-fx-prompt-text-fill: #aeaeae; "
+                            + "-fx-border-color: #0000FF; " // Change border color here
+                            + "-fx-border-width: 8px; " // Adjust border width if needed
+                            + "-fx-border-radius: 8px; "
+                            + "-fx-font-size: 40px");
+                input.setOnKeyPressed(event -> {
+                    if (event.getCode() == KeyCode.ENTER) {
+                        username = input.getText();
+                        System.out.println("Username: " + username);
+                        VBox chatBox = chat.createContent();
+                        chatBox.setPadding(new Insets(0, 64, 0, 64));
+                        StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
+                        root.getChildren().add(chatBox);
+                        b1.setVisible(false);
+                        b2.setVisible(false);
 
-                VBox chatBox = chat.createContent();
-                chatBox.setPadding(new Insets(0, 64, 0, 64));
-                StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
-                root.getChildren().add(chatBox);
-                b1.setVisible(false);
-                b2.setVisible(false);
+                        Label infoLabel = new Label("Waiting for players...");
+                        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
+                        infoLabel.setTextFill(Color.WHITE);
+                        vbox.getChildren().clear();
+                        vbox.getChildren().addAll(title, infoLabel);
+                        vbox.setSpacing(172);
 
-                Label infoLabel = new Label("Waiting for players...");
-                infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
-                infoLabel.setTextFill(Color.WHITE);
+                        clientThread.start();
+                    }
+                });
                 vbox.getChildren().clear();
-                vbox.getChildren().addAll(title, infoLabel);
-                vbox.setSpacing(172);
-
-                clientThread.start();
+                vbox.getChildren().addAll(title, input);
             }
         });
 
