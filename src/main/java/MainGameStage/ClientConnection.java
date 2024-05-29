@@ -7,17 +7,12 @@ import java.net.Socket;
 
 public class ClientConnection {
     private static final int SERVER_PORT = 4000; // Replace with your server's port number
-
-    private String serverIP;
-    private int roomId;
     private Socket socket;
     private DataOutputStream outputStream;
     private DataInputStream inputStream;
-    private Game game;
+    private String username;
 
-    public ClientConnection(Game game, String serverIP) {
-        this.serverIP = serverIP;
-        this.game = game;
+    public ClientConnection(String serverIP) {
         try {
             socket = new Socket(serverIP, SERVER_PORT);
             outputStream = new DataOutputStream(socket.getOutputStream());
@@ -29,7 +24,7 @@ public class ClientConnection {
 
     public int createRoom() {
         try {
-            outputStream.writeUTF("CREATE_ROOM");
+            outputStream.writeUTF("CREATE_ROOM " + username);
             receive();
             String message = receive();
             int roomId = Integer.parseInt(message.split(" ")[1]);
@@ -43,7 +38,7 @@ public class ClientConnection {
 
     public int joinRoom(int roomId) {
         try {
-            outputStream.writeUTF("JOIN_ROOM " + roomId);
+            outputStream.writeUTF("JOIN_ROOM " + roomId + " " + username);
             String message = receive();
             System.out.println(message);
             String[] request = message.split(" ");
@@ -72,9 +67,18 @@ public class ClientConnection {
         }
     }
 
-    public void updatePosition() {
+    public void pressKey(String keypressed) {
         try {
-            outputStream.writeUTF("UPDATE_POSITION");
+            outputStream.writeUTF("KEY_PRESS " + username + " " + keypressed);
+            // Send position information here
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void releaseKey(String keyreleased) {
+        try {
+            outputStream.writeUTF("KEY_RELEASE " + username + " " + keyreleased);
             // Send position information here
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,5 +112,9 @@ public class ClientConnection {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

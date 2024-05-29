@@ -23,11 +23,16 @@ class Player {
 	private double speed;
 	private double health;
 	private boolean isAlive;
+	public boolean goLeft = false;
+	public boolean goRight = false;
+	public boolean goUp = false;
+	public boolean goDown = false;
+	public String currentFacing = "up";
 	private Image player = new Image(getClass().getResourceAsStream("/images/tank-up.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
 	private final static double INITIAL_X = 55;
 	private final static double INITIAL_Y = 50;
 
-	Player (String name){
+	Player (String name, double x, double y){
 		this.name = name;
 		this.xPos = INITIAL_X;
 		this.yPos = INITIAL_Y;

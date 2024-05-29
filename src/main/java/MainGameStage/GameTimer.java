@@ -16,12 +16,10 @@ import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 //import javafx.scene.text.Font;
 //import javafx.scene.text.FontWeight;
 import javafx.scene.paint.Color;
@@ -31,7 +29,6 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 //import java.util.Random;
 
@@ -47,18 +44,15 @@ class GameTimer extends AnimationTimer{
 	private String currentFacing;
 	private Stage stage;
 	private Scene scene;
-	private ChatApp chat;
 	private int change;
 	private long startChanging;
 	private AnimationTimer animationTimer;
 	private double bgOffsetX = 0; // Initial X offset for the background image
+	private ClientConnection connection;
+	private ArrayList<Player> players;
 
 	public static int PLAYER_SIZE = 32;
 	public static int SPRITE_SIZE = 35;
-	private static boolean goLeft;
-	private static boolean goRight;
-	private static boolean goUp;
-	private static boolean goDown;
 	private static boolean fireBullet;
 
 	public final static int START_MAP_WIDTH = 55;
@@ -72,7 +66,7 @@ class GameTimer extends AnimationTimer{
 	private Image left;
 	private Image down;
 	private Image right;
-	GameTimer(Stage stage, Scene scene, GraphicsContext gc, ChatApp chat) {
+	GameTimer(Stage stage, Scene scene, GraphicsContext gc, ClientConnection connection) {
 		this.game_bg = new Image(getClass().getResourceAsStream("/images/gameBg.png"));
 		this.up = new Image(getClass().getResourceAsStream("/images/tank-up.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
 		this.left = new Image(getClass().getResourceAsStream("/images/tank-left.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
@@ -82,7 +76,6 @@ class GameTimer extends AnimationTimer{
 		this.stage = stage;
 		this.gc = gc;
 		this.scene = scene;
-		this.chat = chat;
 		this.gc.drawImage(game_bg, 0, 0);
 		this.scene.setFill(Color.BLACK);
 		this.bullet = new ArrayList<Bullet>();
@@ -94,32 +87,74 @@ class GameTimer extends AnimationTimer{
 		this.currentFacing = "up";
 		this.change = 1;
 		this.prepareActionHandlers();
-		this.player = new Player("Tank");
+		// this.player = new Player("Tank");
 		this.initializeMap();
+		this.connection = connection;
 	}
 
 	@Override
 	public void handle(long currentNanoTime) {
 		this.gc.drawImage(game_bg, 0, 0);
-		this.player.render(this.gc);
+
+		// render players
+		for (Player player: players) player.render(gc);
 
 		for (Steel steel: this.steel) {
 			steel.render(this.gc);
 		}
 		
-		this.movePlayer();
+		this.movePlayers();
+		
 		this.renderMap(currentNanoTime);
+
 		for (Bullet fire: this.bullet) {
 			this.moveBullet(fire);
 		}
 		this.checkBulletPlayerCollision();
 
-		if (this.player.getIsAlive() == false) {
-			this.stop();
-			this.gameOver();
-		}
+		// if (this.player.getIsAlive() == false) {
+		// 	this.stop();
+		// 	this.gameOver();
+		// }
 	}
 	
+	private void movePlayers() {
+		for (Player player: players) {
+			this.checkWaterCollision(player);
+			this.checkWallCollision(player);
+			this.checkMetalCollision(player);
+			this.checkSteelCollision(player);
+			
+				if (player.goLeft) {
+					if (player.getXPos() <= GameTimer.END_MAP_WIDTH && player.getXPos() > GameTimer.START_MAP_WIDTH) {
+						player.setXPos(player.getXPos() - player.getSpeed());
+					}
+					player.loadImage(left);
+					player.currentFacing = "left";
+				} else if (player.goRight) {
+						if (player.getXPos()+GameTimer.PLAYER_SIZE < GameTimer.END_MAP_WIDTH && player.getXPos() >= GameTimer.START_MAP_WIDTH) {
+							player.setXPos(player.getXPos() + player.getSpeed());
+						}
+					player.loadImage(right);
+					player.currentFacing = "right";
+				} else if (player.goUp) {
+						if (player.getYPos() <= GameTimer.END_MAP_HEIGHT && player.getYPos() > GameTimer.START_MAP_HEIGHT) {
+							player.setYPos(player.getYPos() - player.getSpeed());
+						}
+					player.loadImage(up);
+					player.currentFacing = "up";
+				} else if (player.goDown) {
+						if (player.getYPos()+GameTimer.PLAYER_SIZE < GameTimer.END_MAP_HEIGHT && player.getYPos() >= GameTimer.START_MAP_HEIGHT) {
+							player.setYPos(player.getYPos() + player.getSpeed());
+						}
+					player.loadImage(down);
+					player.currentFacing = "down";
+				}
+			
+			player.render(this.gc);
+		}
+	}
+
 	private void drawGameOver(GraphicsContext gc) {
 		// Use an AnimationTimer to continuously redraw the background
 		gc.clearRect(0, 0, Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
@@ -245,51 +280,51 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	void checkWallCollision() {
+	void checkWallCollision(Player player) {
 		for (Wall wall: this.wall) {
-			if (currentFacing == "up") {
-				boolean hasCollisionX = (this.player.getXPos() > wall.getXPos() 
-																&& this.player.getXPos() < wall.getXPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE < wall.getXPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionY = (this.player.getYPos() < wall.getYPos()+GameTimer.PLAYER_SIZE
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()+GameTimer.PLAYER_SIZE);
+			if (player.currentFacing == "up") {
+				boolean hasCollisionX = (player.getXPos() > wall.getXPos() 
+																&& player.getXPos() < wall.getXPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()
+																&& player.getXPos()+GameTimer.PLAYER_SIZE < wall.getXPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionY = (player.getYPos() < wall.getYPos()+GameTimer.PLAYER_SIZE
+																&& player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()+GameTimer.PLAYER_SIZE);
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goUp = false;
-					this.player.setYPos(this.player.getYPos()+1);
+					player.goUp = false;
+					player.setYPos(player.getYPos()+1);
 				}
-			} else if (currentFacing == "down") {
-				boolean hasCollisionX = (this.player.getXPos() > wall.getXPos() 
-																&& this.player.getXPos() < wall.getXPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE < wall.getXPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionY = (this.player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()
-																&& this.player.getYPos() < wall.getYPos());
+			} else if (player.currentFacing == "down") {
+				boolean hasCollisionX = (player.getXPos() > wall.getXPos() 
+																&& player.getXPos() < wall.getXPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()
+																&& player.getXPos()+GameTimer.PLAYER_SIZE < wall.getXPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionY = (player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()
+																&& player.getYPos() < wall.getYPos());
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goDown = false;
-					this.player.setYPos(this.player.getYPos()-1);
+					player.goDown = false;
+					player.setYPos(player.getYPos()-1);
 				}
-			} else if (currentFacing == "left") {
-				boolean hasCollisionY = (this.player.getYPos() > wall.getYPos() 
-																&& this.player.getYPos() <=wall.getYPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE < wall.getYPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionX = (this.player.getXPos() < wall.getXPos()+GameTimer.PLAYER_SIZE
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()+GameTimer.PLAYER_SIZE);
+			} else if (player.currentFacing == "left") {
+				boolean hasCollisionY = (player.getYPos() > wall.getYPos() 
+																&& player.getYPos() <=wall.getYPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()
+																&& player.getYPos()+GameTimer.PLAYER_SIZE < wall.getYPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionX = (player.getXPos() < wall.getXPos()+GameTimer.PLAYER_SIZE
+																&& player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()+GameTimer.PLAYER_SIZE);
 				if (hasCollisionX && hasCollisionY) {
-					GameTimer.goLeft = false;
-					this.player.setXPos(this.player.getXPos()+2);
+					player.goLeft = false;
+					player.setXPos(player.getXPos()+2);
 				}
-			} else if (currentFacing == "right") {
-				boolean hasCollisionY = (this.player.getYPos() > wall.getYPos() 
-																&& this.player.getYPos() < wall.getYPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE < wall.getYPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionX = (this.player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()
-																&& this.player.getXPos() < wall.getXPos());
+			} else if (player.currentFacing == "right") {
+				boolean hasCollisionY = (player.getYPos() > wall.getYPos() 
+																&& player.getYPos() < wall.getYPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getYPos()+GameTimer.PLAYER_SIZE > wall.getYPos()
+																&& player.getYPos()+GameTimer.PLAYER_SIZE < wall.getYPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionX = (player.getXPos()+GameTimer.PLAYER_SIZE > wall.getXPos()
+																&& player.getXPos() < wall.getXPos());
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goRight = false;
-					this.player.setXPos(this.player.getXPos()-1);
+					player.goRight = false;
+					player.setXPos(player.getXPos()-1);
 				}
 			}
 
@@ -304,101 +339,101 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	void checkWaterCollision() {
+	void checkWaterCollision(Player player) {
 		for (Water water: this.water) {
-			if (currentFacing == "up") {
-				boolean hasCollisionX = (this.player.getXPos() > water.getXPos() 
-																&& this.player.getXPos() < water.getXPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE < water.getXPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionY = (this.player.getYPos() < water.getYPos()+GameTimer.PLAYER_SIZE
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()+GameTimer.PLAYER_SIZE);
+			if (player.currentFacing == "up") {
+				boolean hasCollisionX = (player.getXPos() > water.getXPos() 
+																&& player.getXPos() < water.getXPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()
+																&& player.getXPos()+GameTimer.PLAYER_SIZE < water.getXPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionY = (player.getYPos() < water.getYPos()+GameTimer.PLAYER_SIZE
+																&& player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()+GameTimer.PLAYER_SIZE);
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goUp = false;
-					this.player.setYPos(this.player.getYPos()+1);
+					player.goUp = false;
+					player.setYPos(player.getYPos()+1);
 				}
-			} else if (currentFacing == "down") {
-				boolean hasCollisionX = (this.player.getXPos() > water.getXPos() 
-																&& this.player.getXPos() < water.getXPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE < water.getXPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionY = (this.player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()
-																&& this.player.getYPos() < water.getYPos());
+			} else if (player.currentFacing == "down") {
+				boolean hasCollisionX = (player.getXPos() > water.getXPos() 
+																&& player.getXPos() < water.getXPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()
+																&& player.getXPos()+GameTimer.PLAYER_SIZE < water.getXPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionY = (player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()
+																&& player.getYPos() < water.getYPos());
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goDown = false;
-					this.player.setYPos(this.player.getYPos()-1);
+					player.goDown = false;
+					player.setYPos(player.getYPos()-1);
 				}
-			} else if (currentFacing == "left") {
-				boolean hasCollisionY = (this.player.getYPos() > water.getYPos() 
-																&& this.player.getYPos() < water.getYPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE < water.getYPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionX = (this.player.getXPos() < water.getXPos()+GameTimer.PLAYER_SIZE
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()+GameTimer.PLAYER_SIZE);
+			} else if (player.currentFacing == "left") {
+				boolean hasCollisionY = (player.getYPos() > water.getYPos() 
+																&& player.getYPos() < water.getYPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()
+																&& player.getYPos()+GameTimer.PLAYER_SIZE < water.getYPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionX = (player.getXPos() < water.getXPos()+GameTimer.PLAYER_SIZE
+																&& player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()+GameTimer.PLAYER_SIZE);
 				if (hasCollisionX && hasCollisionY) {
-					GameTimer.goLeft = false;
-					this.player.setXPos(this.player.getXPos()+2);
+					player.goLeft = false;
+					player.setXPos(player.getXPos()+2);
 				}
-			} else if (currentFacing == "right") {
-				boolean hasCollisionY = (this.player.getYPos() > water.getYPos() 
-																&& this.player.getYPos() < water.getYPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE < water.getYPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionX = (this.player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()
-																&& this.player.getXPos() < water.getXPos());
+			} else if (player.currentFacing == "right") {
+				boolean hasCollisionY = (player.getYPos() > water.getYPos() 
+																&& player.getYPos() < water.getYPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getYPos()+GameTimer.PLAYER_SIZE > water.getYPos()
+																&& player.getYPos()+GameTimer.PLAYER_SIZE < water.getYPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionX = (player.getXPos()+GameTimer.PLAYER_SIZE > water.getXPos()
+																&& player.getXPos() < water.getXPos());
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goRight = false;
-					this.player.setXPos(this.player.getXPos()-1);
+					player.goRight = false;
+					player.setXPos(player.getXPos()-1);
 				}
 			}
 		}
 	}
 
-	void checkMetalCollision() {
+	void checkMetalCollision(Player player) {
 		for (Metal metal: this.metal) {
-			if (currentFacing == "up") {
-				boolean hasCollisionX = (this.player.getXPos() > metal.getXPos() 
-																&& this.player.getXPos() < metal.getXPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE < metal.getXPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionY = (this.player.getYPos() < metal.getYPos()+GameTimer.PLAYER_SIZE
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()+GameTimer.PLAYER_SIZE);
+			if (player.currentFacing == "up") {
+				boolean hasCollisionX = (player.getXPos() > metal.getXPos() 
+																&& player.getXPos() < metal.getXPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()
+																&& player.getXPos()+GameTimer.PLAYER_SIZE < metal.getXPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionY = (player.getYPos() < metal.getYPos()+GameTimer.PLAYER_SIZE
+																&& player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()+GameTimer.PLAYER_SIZE);
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goUp = false;
-					this.player.setYPos(this.player.getYPos()+1);
+					player.goUp = false;
+					player.setYPos(player.getYPos()+1);
 				}
-			} else if (currentFacing == "down") {
-				boolean hasCollisionX = (this.player.getXPos() > metal.getXPos() 
-																&& this.player.getXPos() < metal.getXPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE < metal.getXPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionY = (this.player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()
-																&& this.player.getYPos() < metal.getYPos());
+			} else if (player.currentFacing == "down") {
+				boolean hasCollisionX = (player.getXPos() > metal.getXPos() 
+																&& player.getXPos() < metal.getXPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()
+																&& player.getXPos()+GameTimer.PLAYER_SIZE < metal.getXPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionY = (player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()
+																&& player.getYPos() < metal.getYPos());
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goDown = false;
-					this.player.setYPos(this.player.getYPos()-1);
+					player.goDown = false;
+					player.setYPos(player.getYPos()-1);
 				}
-			} else if (currentFacing == "left") {
-				boolean hasCollisionY = (this.player.getYPos() > metal.getYPos() 
-																&& this.player.getYPos() < metal.getYPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE < metal.getYPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionX = (this.player.getXPos() < metal.getXPos()+GameTimer.PLAYER_SIZE
-																&& this.player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()+GameTimer.PLAYER_SIZE);
+			} else if (player.currentFacing == "left") {
+				boolean hasCollisionY = (player.getYPos() > metal.getYPos() 
+																&& player.getYPos() < metal.getYPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()
+																&& player.getYPos()+GameTimer.PLAYER_SIZE < metal.getYPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionX = (player.getXPos() < metal.getXPos()+GameTimer.PLAYER_SIZE
+																&& player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()+GameTimer.PLAYER_SIZE);
 				if (hasCollisionX && hasCollisionY) {
-					GameTimer.goLeft = false;
-					this.player.setXPos(this.player.getXPos()+2);
+					player.goLeft = false;
+					player.setXPos(player.getXPos()+2);
 				}
-			} else if (currentFacing == "right") {
-				boolean hasCollisionY = (this.player.getYPos() > metal.getYPos() 
-																&& this.player.getYPos() < metal.getYPos()+GameTimer.PLAYER_SIZE)
-																|| (this.player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()
-																&& this.player.getYPos()+GameTimer.PLAYER_SIZE < metal.getYPos()+GameTimer.PLAYER_SIZE);
-				boolean hasCollisionX = (this.player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()
-																&& this.player.getXPos() < metal.getXPos());
+			} else if (player.currentFacing == "right") {
+				boolean hasCollisionY = (player.getYPos() > metal.getYPos() 
+																&& player.getYPos() < metal.getYPos()+GameTimer.PLAYER_SIZE)
+																|| (player.getYPos()+GameTimer.PLAYER_SIZE > metal.getYPos()
+																&& player.getYPos()+GameTimer.PLAYER_SIZE < metal.getYPos()+GameTimer.PLAYER_SIZE);
+				boolean hasCollisionX = (player.getXPos()+GameTimer.PLAYER_SIZE > metal.getXPos()
+																&& player.getXPos() < metal.getXPos());
 				if (hasCollisionY && hasCollisionX) {
-					GameTimer.goRight = false;
-					this.player.setXPos(this.player.getXPos()-1);
+					player.goRight = false;
+					player.setXPos(player.getXPos()-1);
 				}
 			}
 
@@ -412,13 +447,13 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	void checkSteelCollision() {
+	void checkSteelCollision(Player player) {
 		for (Steel steel: this.steel) {
-			if (steel.collidesWith(this.player)) {
-				this.player.setSpeed(2);
+			if (steel.collidesWith(player)) {
+				player.setSpeed(2);
 				break;
 			} else {
-				this.player.setSpeed(1);
+				player.setSpeed(1);
 			}
 		}
 	}
@@ -435,32 +470,61 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
+	public void handleKeyPress(String username, String code) {
+		Player player = null;
+
+		for (Player x: players) 
+			if (x.getName().equals(username)) player = x;
+
+		if(code.equals("A")) {
+			player.goLeft = true;
+		}else if(code.equals("D")) {
+			player.goRight = true;
+		}else if(code.equals("W")) {
+			player.goUp = true;
+		}else if(code.equals("S")) {
+			player.goDown = true;
+		// }else if(code.equals("SPACE") && firing.getStatus() != Animation.Status.RUNNING) {
+		// 					GameTimer.fireBullet = true;
+		// 					firing.playFromStart();
+		}
+	}
+
+	public void handleKeyRelease(String username, String code) {
+		Player player = null;
+
+		for (Player x: players) 
+			if (x.getName().equals(username)) player = x;
+
+		if(code.equals("A")) {
+			player.goLeft = false;
+		}else if(code.equals("D")) {
+			player.goRight = false;
+		}else if(code.equals("W")) {
+			player.goUp = false;
+		}else if(code.equals("S")) {
+			player.goDown = false;
+		
+		// }else if(code.equals("SPACE")) {
+		// 					GameTimer.fireBullet = false;
+		// 					firing.stop();
+		}
+	}
+
 	private void prepareActionHandlers() {	// method for the player controls
-			Duration firingInterval = Duration.millis(500);
-			Timeline firing = new Timeline(
-				new KeyFrame(Duration.ZERO, event -> fireBullet()),
-				new KeyFrame(firingInterval));
-			firing.setCycleCount(Animation.INDEFINITE);
+		// Duration firingInterval = Duration.millis(500);
+		// 	Timeline firing = new Timeline(
+		// 		new KeyFrame(Duration.ZERO, event -> fireBullet()),
+		// 		new KeyFrame(firingInterval));
+		// 	firing.setCycleCount(Animation.INDEFINITE);
 
     	this.scene.setOnKeyPressed(new EventHandler<KeyEvent>()
         {
             public void handle(KeyEvent e)
             {
                 String code = e.getCode().toString();
-                if(code.equals("A")) {
-                	GameTimer.goLeft = true;
-                }else if(code.equals("D")) {
-                	GameTimer.goRight = true;
-                }else if(code.equals("W")) {
-                	GameTimer.goUp = true;
-                }else if(code.equals("S")) {
-                	GameTimer.goDown = true;
-                }else if(code.equals("SPACE") && firing.getStatus() != Animation.Status.RUNNING) {
-									GameTimer.fireBullet = true;
-									firing.playFromStart();
-								}else if (code.equals("SLASH")) {
-									System.out.println("yes");
-								}
+				if (code.equals("A") || code.equals("S") || code.equals("W") || code.equals("D") || code.equals("SPACE"))
+					connection.pressKey(code);
             }
         });
     	this.scene.setOnKeyReleased(new EventHandler<KeyEvent>()
@@ -468,55 +532,12 @@ class GameTimer extends AnimationTimer{
             public void handle(KeyEvent e)
             {
                 String code = e.getCode().toString();
-                if(code.equals("A")) {
-                	GameTimer.goLeft = false;
-                }else if(code.equals("D")) {
-                	GameTimer.goRight = false;
-                }else if(code.equals("W")) {
-                	GameTimer.goUp = false;
-                }else if(code.equals("S")) {
-                	GameTimer.goDown = false;
-                }else if(code.equals("SPACE")) {
-									GameTimer.fireBullet = false;
-									firing.stop();
-								}
+				
+				if (code.equals("A") || code.equals("S") || code.equals("W") || code.equals("D") || code.equals("SPACE"))
+					connection.releaseKey(code);
             }
         });
     }
-
-	private void movePlayer() {		// method for controlling the player
-		this.checkWaterCollision();
-		this.checkWallCollision();
-		this.checkMetalCollision();
-		this.checkSteelCollision();
-		
-			if (GameTimer.goLeft) {
-				if (this.player.getXPos() <= GameTimer.END_MAP_WIDTH && this.player.getXPos() > GameTimer.START_MAP_WIDTH) {
-					this.player.setXPos(this.player.getXPos() - this.player.getSpeed());
-				}
-				this.player.loadImage(left);
-				currentFacing = "left";
-			} else if (GameTimer.goRight) {
-					if (this.player.getXPos()+GameTimer.PLAYER_SIZE < GameTimer.END_MAP_WIDTH && this.player.getXPos() >= GameTimer.START_MAP_WIDTH) {
-						this.player.setXPos(this.player.getXPos() + this.player.getSpeed());
-					}
-				this.player.loadImage(right);
-				currentFacing = "right";
-			} else if (GameTimer.goUp) {
-					if (this.player.getYPos() <= GameTimer.END_MAP_HEIGHT && this.player.getYPos() > GameTimer.START_MAP_HEIGHT) {
-						this.player.setYPos(this.player.getYPos() - this.player.getSpeed());
-					}
-				this.player.loadImage(up);
-				currentFacing = "up";
-			} else if (GameTimer.goDown) {
-					if (this.player.getYPos()+GameTimer.PLAYER_SIZE < GameTimer.END_MAP_HEIGHT && this.player.getYPos() >= GameTimer.START_MAP_HEIGHT) {
-						this.player.setYPos(this.player.getYPos() + this.player.getSpeed());
-					}
-				this.player.loadImage(down);
-				currentFacing = "down";
-			}
-		this.player.render(this.gc);
-	}
 
 	private void fireBullet() {
 		long currentTime = System.currentTimeMillis();
@@ -580,6 +601,19 @@ class GameTimer extends AnimationTimer{
 
 		if (fire.getVisible()) {
 			fire.render(this.gc);
+		}
+	}
+
+
+	public void setPlayers(ArrayList<String> userIds) {
+		this.players = new ArrayList<>();
+		int i = 0;
+		Integer []x = {55, 1105, 55, 1105};
+		Integer[]y = {50, 50, 715, 715};
+
+		for (String userId: userIds) {
+			Player player = new Player(userId, x[i], y[i]);
+			players.add(player);
 		}
 	}
 }
