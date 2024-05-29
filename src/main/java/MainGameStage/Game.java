@@ -106,10 +106,11 @@ public class Game {
     }
 
     ClientConnection createConnection() {
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Enter Server's IP Address: ");
-        String serverIP = sc.nextLine();
-        return new ClientConnection(this, serverIP);
+        try (Scanner sc = new Scanner(System.in)) {
+            System.out.println("Enter Server's IP Address: ");
+            String serverIP = sc.nextLine();
+            return new ClientConnection(this, serverIP);
+        }
     }
 
     // Method to draw the background image with scrolling effect
@@ -202,15 +203,14 @@ public class Game {
                 // TODO: HANDLE -1 roomId
                 TextField input = new TextField();
                 input.setPromptText("Enter your username");
-                input.setPrefHeight(50); // Adjust height here
-                input.setPrefWidth(50); // Adjust width here
-                input.setMinWidth(50);  // Ensure minimum width is set
+                input.setPrefHeight(50); 
+                input.setMaxWidth(600);  
                 input.setStyle("-fx-control-inner-background: #343434; "
                             + "-fx-prompt-text-fill: #aeaeae; "
-                            + "-fx-border-color: #0000FF; " // Change border color here
-                            + "-fx-border-width: 8px; " // Adjust border width if needed
+                            + "-fx-border-color: blue; " 
+                            + "-fx-border-width: 8px; " 
                             + "-fx-border-radius: 8px; "
-                            + "-fx-font-size: 40px");
+                            + "-fx-font-size: 36px");
                 input.setOnKeyPressed(event -> {
                     if (event.getCode() == KeyCode.ENTER) {
                         username = input.getText();
@@ -234,6 +234,7 @@ public class Game {
                 });
                 vbox.getChildren().clear();
                 vbox.getChildren().addAll(title, input);
+                vbox.setSpacing(136);
             }
         });
 
