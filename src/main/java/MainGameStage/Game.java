@@ -38,7 +38,7 @@ public class Game {
     private ClientConnection connection = createConnection();
     public final static int WINDOW_WIDTH = 1500;
     public final static int WINDOW_HEIGHT = 800;
-    private String username = "Server";
+    private String username;
     private int roomId;
     private GameTimer gameTimer;
 
@@ -51,7 +51,7 @@ public class Game {
         this.root.getChildren().addAll(this.canvas);
         this.gameScene = new Scene(this.root);
         GraphicsContext gc = this.canvas.getGraphicsContext2D(); // we will pass this gc to be able to draw on this Game's canvas
-        this.gameTimer = new GameTimer(this.stage, this.gameScene, gc, this.chat);
+        this.gameTimer = new GameTimer(this.stage, this.gameScene, gc, this.connection);
     }
 
     public void setStage(Stage stage) {
@@ -109,7 +109,7 @@ public class Game {
         try (Scanner sc = new Scanner(System.in)) {
             System.out.println("Enter Server's IP Address: ");
             String serverIP = sc.nextLine();
-            return new ClientConnection(this, serverIP);
+            return new ClientConnection(serverIP);
         }
     }
 
@@ -190,6 +190,7 @@ public class Game {
             if (event.getCode() == KeyCode.ENTER) {
                 username = input.getText();
                 chat.setUsername(username);
+                connection.setUsername(username);
                 System.out.println("Username: " + username);
                 
                 vbox.getChildren().clear();
@@ -276,7 +277,6 @@ public class Game {
         if (animationTimer != null) {
             animationTimer.stop();
             stage.setScene(this.gameScene);
-            System.out.println("WAS HERE");
             gameTimer.start(); // this internally calls the handle() method of our GameTimer
         }
     }
@@ -296,5 +296,13 @@ public class Game {
 
     public String getUsername() {
         return this.username;
+    }
+
+    public void setNumPlayers(int numPlayers) {
+        this.numPlayers = numPlayers;
+    }
+
+    public int getNumPlayers() {
+        return this.numPlayers;
     }
 }

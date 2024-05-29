@@ -32,6 +32,7 @@ public class Server {
         private DataOutputStream out;
         private DataInputStream in;
         private int roomId = -1;
+        public String username;
 
         public ClientHandler(Socket socket) {
             this.clientSocket = socket;
@@ -50,17 +51,23 @@ public class Server {
 
                     if (request.startsWith("CREATE_ROOM")) {
                         createRoom();
+                        this.username = request.split(" ")[1];
                     } else if (request.startsWith("JOIN_ROOM")) {
                         int roomId = Integer.parseInt(request.split(" ")[1]);
                         joinRoom(roomId);
-                    } else if (request.startsWith("POSITION_UPDATE")) {
-                        updatePosition(request);
-                    } else if (request.startsWith("SEND_CHAT")) {
+                        this.username = request.split(" ")[2];
+                    } else if (request.startsWith("SEND_CHAT") || request.startsWith("KEY_PRESS") || request.startsWith("KEY_RELEASE")) {
                         GameRoom gameRoom = gameRooms.get(this.roomId);
                         gameRoom.broadcast(request);
                     } else if (request.startsWith("START_GAME")) {
                         GameRoom gameRoom = gameRooms.get(this.roomId);
-                        gameRoom.broadcast("START_GAME");
+                        ArrayList<String> usernames = new ArrayList<>();
+                        for (ClientHandler client: gameRoom.players) usernames.add(client.username);
+
+                        StringBuilder sb = new StringBuilder();
+                        for (String username: usernames) sb.append(username).append(" ");
+
+                        gameRoom.broadcast("START_GAME " + sb.toString());
                     }
                 }
             } catch (IOException e) {
@@ -126,13 +133,6 @@ public class Server {
                         gameRooms.remove(roomId);
                     }
                 }
-            }
-        }
-
-        private void updatePosition(String request) {
-            GameRoom gameRoom = gameRooms.get(roomId);
-            if (gameRoom != null) {
-                gameRoom.broadcast(request);
             }
         }
 
