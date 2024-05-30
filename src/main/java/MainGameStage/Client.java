@@ -22,7 +22,10 @@ public class Client implements Runnable {
             String message = game.getConnection().receive();
             String[] result = message.split(" ");
             String code = result[0];
-            System.out.println(message);
+            
+            if (!message.startsWith("KEY_PRESS") || !message.startsWith("KEY_RELEASE"))
+                System.out.println(message);
+
             if (code.equals("START_GAME")) {  // Use equals for string comparison
                 // get the remaining usernames
                 ArrayList<String> usernames = new ArrayList<>();
