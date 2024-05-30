@@ -105,27 +105,7 @@ class GameTimer extends AnimationTimer{
 		this.gc.drawImage(game_bg, 0, 0);
 
 		// render players
-		int paddingT = 230;
-		int paddingR = 250;
-		int paddingL = 1170;
-		for (Player player: players) {
-			player.render(gc);
-			Label infoLabel = new Label(player.getName());
-			Label infoLabel2 = new Label("");
-			for (int i=1; i<=player.getHealth(); i++) {
-				infoLabel2.setText(infoLabel2.getText() + "❤");
-			}
-			infoLabel.setPadding(new Insets(paddingT, 0, 0, paddingL));
-			infoLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 16));
-			infoLabel.setTextFill(Color.WHITE);
-			infoLabel2.setPadding(new Insets(paddingT, paddingR, 0, 0));
-			infoLabel2.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-			infoLabel2.setTextFill(Color.RED);
-			this.stage.getChildren().addAll(infoLabel, infoLabel2);
-			StackPane.setAlignment(infoLabel, Pos.TOP_CENTER);
-			StackPane.setAlignment(infoLabel2, Pos.TOP_RIGHT);
-			paddingT += 18;
-		}
+		for (Player player: players) player.render(gc);
 
 		for (Steel steel: this.steel) {
 			steel.render(this.gc);
@@ -148,7 +128,12 @@ class GameTimer extends AnimationTimer{
 		if (players.size() == 1) {
 			if (this != null) {
 				this.stop();
-				this.gameOver();
+				System.out.println(connection.getUsername());
+				if (players.get(0).getName().equals(connection.getUsername())) {
+					this.gameOver(1);
+				} else {
+					this.gameOver(0);
+				}
 			}
 		}
 	}
@@ -190,13 +175,16 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	private void drawGameOver(GraphicsContext gc) {
+	private void drawGameOver(GraphicsContext gc, int win) {
 		// Use an AnimationTimer to continuously redraw the background
 		gc.clearRect(0, 0, Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
-
+		Image bg;
 		// Draw background image
-		Image bg = new Image(getClass().getResourceAsStream("/images/gameOverScreen.gif"), 1500, 800, false, false);
-
+		if (win == 1) {
+			bg = new Image(getClass().getResourceAsStream("/images/gameWinnerScreen.png"), 1500, 800, false, false);
+		} else {
+			bg = new Image(getClass().getResourceAsStream("/images/gameOverScreen.gif"), 1500, 800, false, false);
+		}
 		// Calculate the new offset based on time or player position
 		// For example, you can use time to make it scroll automatically
 		bgOffsetX -= 1; // Adjust the scrolling speed as needed
@@ -211,12 +199,12 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	private void gameOver() {
+	private void gameOver(int win) {
 		stage.getChildren().remove(1);
-    animationTimer = new AnimationTimer() {
+		animationTimer = new AnimationTimer() {
 			@Override
 			public void handle(long currentNanoTime) {
-					drawGameOver(gc);
+					drawGameOver(gc, win);
 			}
 		};
 		animationTimer.start();
