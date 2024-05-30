@@ -37,7 +37,19 @@ public class Client implements Runnable {
                 Platform.runLater(() -> game.startGame());
             } else if (code.equals("SEND_CHAT")) {
                 Platform.runLater(() -> game.getChat().appendMessage(result[1] + " "+  result[2]));
-            } else if (code.equals("JOINED_ROOM")) {
+            } else if (code.equals("SERVER_CHAT")) {
+                StringBuilder combinedString = new StringBuilder();
+
+                for (int i = 1; i < result.length; i++) {
+                    combinedString.append(result[i]);
+                    if (i < result.length - 1) {
+                        combinedString.append(" "); // Add delimiter only between elements
+                    } else combinedString.append(".");
+                }
+
+                Platform.runLater(() -> game.getChat().appendMessage(combinedString.toString()));
+            } 
+            else if (code.equals("JOINED_ROOM")) {
                 Platform.runLater(() -> game.setNumPlayers(Integer.parseInt(result[1])));
             } else if (code.equals("KEY_PRESS")) {
                 Platform.runLater(() -> game.getGameTimer().handleKeyPress(result[1], result[2], Double.parseDouble(result[3]), Double.parseDouble(result[4])));

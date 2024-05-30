@@ -57,7 +57,7 @@ public class Server {
                         int roomId = Integer.parseInt(request.split(" ")[1]);
                         joinRoom(roomId);
                         this.username = request.split(" ")[2];
-                    } else if (request.startsWith("SEND_CHAT") || request.startsWith("KEY_PRESS") || request.startsWith("KEY_RELEASE")) {
+                    } else if (request.startsWith("SEND_CHAT") || request.startsWith("KEY_PRESS") || request.startsWith("KEY_RELEASE") || request.startsWith("SERVER_CHAT")) {
                         GameRoom gameRoom = gameRooms.get(this.roomId);
                         gameRoom.broadcast(request);
                     } else if (request.startsWith("START_GAME")) {
