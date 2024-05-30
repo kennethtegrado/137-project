@@ -142,6 +142,7 @@ public class Game {
 
         ImageView joinGameView = new ImageView(new Image(getClass().getResourceAsStream("/images/join.png")));
         ImageView startGameView = new ImageView(new Image(getClass().getResourceAsStream("/images/new.png")));
+        ImageView backView = new ImageView(new Image(getClass().getResourceAsStream("/images/back.png")));
 
         VBox vbox = new VBox(title);
         vbox.setAlignment(Pos.CENTER);
@@ -174,6 +175,11 @@ public class Game {
         b3.setStyle("-fx-background-color: blue");
         b3.setPrefSize(220, 70);
         b3.setGraphic(startGameView);
+
+        Button b4 = new Button();
+        b4.setStyle("-fx-background-color: blue");
+        b4.setPrefSize(10, 5);
+        b4.setGraphic(backView);
 
 
         TextField input = new TextField();
@@ -234,23 +240,42 @@ public class Game {
                         inputRoomId.setOnKeyPressed(event -> {
                             if (event.getCode() == KeyCode.ENTER) {
                                 roomId = Integer.parseInt(inputRoomId.getText());
-                                connection.joinRoom(roomId);
+                                if (connection.joinRoom(roomId) != -1) {
+                                    VBox chatBox = chat.createContent();
+                                    chatBox.setPadding(new Insets(0, 64, 0, 64));
+                                    StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
+                                    root.getChildren().add(chatBox);
+                                    b1.setVisible(false);
+                                    b2.setVisible(false);
+                                    
+                                    Label infoLabel = new Label("Waiting for players...");
+                                    infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
+                                    infoLabel.setTextFill(Color.WHITE);
+                                    vbox.getChildren().clear();
+                                    vbox.getChildren().addAll(title, infoLabel);
+                                    vbox.setSpacing(172);
+                    
+                                    clientThread.start();
+                                } else {
+                                    Label infoLabel = new Label("Cannot enter the room!");
+                                    infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
+                                    infoLabel.setTextFill(Color.WHITE);
+                                    vbox.getChildren().clear();
+                                    vbox.getChildren().addAll(title, infoLabel, b4);
+                                    vbox.setSpacing(100);
+
+                                    b4.setOnAction(new EventHandler<ActionEvent>() {
+                                        @Override
+                                        public void handle(ActionEvent e) {
+                                            vbox.getChildren().clear();
+                                            b1.setVisible(true);
+                                            b2.setVisible(true);
+                                            vbox.getChildren().addAll(title, b1, b2);
+                                            vbox.setSpacing(40);
+                                        }
+                                    });
+                                }
                                 
-                                VBox chatBox = chat.createContent();
-                                chatBox.setPadding(new Insets(0, 64, 0, 64));
-                                StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
-                                root.getChildren().add(chatBox);
-                                b1.setVisible(false);
-                                b2.setVisible(false);
-                
-                                Label infoLabel = new Label("Waiting for players...");
-                                infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
-                                infoLabel.setTextFill(Color.WHITE);
-                                vbox.getChildren().clear();
-                                vbox.getChildren().addAll(title, infoLabel);
-                                vbox.setSpacing(172);
-                
-                                clientThread.start();
                             }
                         });
                         vbox.getChildren().clear();

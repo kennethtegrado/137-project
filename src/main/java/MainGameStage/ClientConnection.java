@@ -43,7 +43,7 @@ public class ClientConnection {
             String message = receive();
             System.out.println(message);
             String[] request = message.split(" ");
-            if (request[0] != "ROOM_FULL" || request[0] != "ROOM_NOT_FOUND")
+            if (request[0].equals("ROOM_FULL") && request[0].equals("ROOM_NOT_FOUND"))
                 return Integer.parseInt(message.split(" ")[1]);
         } catch (IOException e) {
             e.printStackTrace();
