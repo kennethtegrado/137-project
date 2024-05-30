@@ -16,6 +16,7 @@ import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
@@ -32,6 +33,7 @@ import javafx.util.Duration;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Label;
 
 import java.util.ArrayList;
 //import java.util.Random;
@@ -103,7 +105,27 @@ class GameTimer extends AnimationTimer{
 		this.gc.drawImage(game_bg, 0, 0);
 
 		// render players
-		for (Player player: players) player.render(gc);
+		int paddingT = 230;
+		int paddingR = 250;
+		int paddingL = 1170;
+		for (Player player: players) {
+			player.render(gc);
+			Label infoLabel = new Label(player.getName());
+			Label infoLabel2 = new Label("");
+			for (int i=1; i<=player.getHealth(); i++) {
+				infoLabel2.setText(infoLabel2.getText() + "❤");
+			}
+			infoLabel.setPadding(new Insets(paddingT, 0, 0, paddingL));
+			infoLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 16));
+			infoLabel.setTextFill(Color.WHITE);
+			infoLabel2.setPadding(new Insets(paddingT, paddingR, 0, 0));
+			infoLabel2.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+			infoLabel2.setTextFill(Color.RED);
+			this.stage.getChildren().addAll(infoLabel, infoLabel2);
+			StackPane.setAlignment(infoLabel, Pos.TOP_CENTER);
+			StackPane.setAlignment(infoLabel2, Pos.TOP_RIGHT);
+			paddingT += 18;
+		}
 
 		for (Steel steel: this.steel) {
 			steel.render(this.gc);
