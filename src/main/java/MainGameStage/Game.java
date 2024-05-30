@@ -51,7 +51,7 @@ public class Game {
         this.root.getChildren().addAll(this.canvas);
         this.gameScene = new Scene(this.root);
         GraphicsContext gc = this.canvas.getGraphicsContext2D(); // we will pass this gc to be able to draw on this Game's canvas
-        this.gameTimer = new GameTimer(this.stage, this.gameScene, gc, this.connection);
+        this.gameTimer = new GameTimer(this.root, this.gameScene, gc, this.connection);
     }
 
     public void setStage(Stage stage) {

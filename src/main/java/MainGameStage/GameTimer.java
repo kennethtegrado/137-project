@@ -19,10 +19,14 @@ import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 //import javafx.scene.text.Font;
 //import javafx.scene.text.FontWeight;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.Scene;
@@ -42,7 +46,7 @@ class GameTimer extends AnimationTimer{
 	private ArrayList<Metal> metal;
 	private ArrayList<Steel> steel;
 	private String currentFacing;
-	private Stage stage;
+	private StackPane stage;
 	private Scene scene;
 	private int change;
 	private long startChanging;
@@ -66,7 +70,7 @@ class GameTimer extends AnimationTimer{
 	private Image left;
 	private Image down;
 	private Image right;
-	GameTimer(Stage stage, Scene scene, GraphicsContext gc, ClientConnection connection) {
+	GameTimer(StackPane stage, Scene scene, GraphicsContext gc, ClientConnection connection) {
 		this.game_bg = new Image(getClass().getResourceAsStream("/images/gameBg.png"));
 		this.up = new Image(getClass().getResourceAsStream("/images/tank-up.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
 		this.left = new Image(getClass().getResourceAsStream("/images/tank-left.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
@@ -115,6 +119,13 @@ class GameTimer extends AnimationTimer{
 		for (Player player: players)
 		if (player.getIsAlive() == false) {
 			players.remove(player);
+		}
+
+		if (players.size() == 1) {
+			if (this != null) {
+				this.stop();
+				this.gameOver();
+			}
 		}
 	}
 	
@@ -177,23 +188,14 @@ class GameTimer extends AnimationTimer{
 	}
 
 	private void gameOver() {
-		Canvas canvas = new Canvas(Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
-		GraphicsContext gc = canvas.getGraphicsContext2D();
-
-		// Use an AnimationTimer to continuously redraw the background
-		animationTimer = new AnimationTimer() {
-				@Override
-				public void handle(long currentNanoTime) {
-						drawGameOver(gc);
-				}
+		stage.getChildren().remove(1);
+    animationTimer = new AnimationTimer() {
+			@Override
+			public void handle(long currentNanoTime) {
+					drawGameOver(gc);
+			}
 		};
 		animationTimer.start();
-		StackPane screen = new StackPane();
-		StackPane.setAlignment(canvas, Pos.CENTER);
-
-		screen.getChildren().addAll(canvas);
-		Scene gameOver = new Scene( screen );
-		this.stage.setScene(gameOver);
 	}
 
 	void initializeMap() {
