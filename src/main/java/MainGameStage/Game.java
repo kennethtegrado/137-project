@@ -217,9 +217,12 @@ public class Game {
                         root.getChildren().add(chatBox);
                         b1.setVisible(false);
                         b2.setVisible(false);
+                        Label infoLabel = new Label("Your Room ID is " + roomId);
+                        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 30));
+                        infoLabel.setTextFill(Color.WHITE);
                         vbox.getChildren().clear();
-                        vbox.getChildren().addAll(title, b3);
-                        vbox.setSpacing(155);
+                        vbox.getChildren().addAll(title, infoLabel, b3);
+                        vbox.setSpacing(100);
                         clientThread.start();
                     }
                 });
@@ -240,7 +243,9 @@ public class Game {
                         inputRoomId.setOnKeyPressed(event -> {
                             if (event.getCode() == KeyCode.ENTER) {
                                 roomId = Integer.parseInt(inputRoomId.getText());
-                                if (connection.joinRoom(roomId) != -1) {
+                                int returnedRoomId = connection.joinRoom(roomId);
+                                System.out.println(returnedRoomId);
+                                if (returnedRoomId != -1) {
                                     VBox chatBox = chat.createContent();
                                     chatBox.setPadding(new Insets(0, 64, 0, 64));
                                     StackPane.setAlignment(chatBox, Pos.BOTTOM_RIGHT);
@@ -251,9 +256,12 @@ public class Game {
                                     Label infoLabel = new Label("Waiting for players...");
                                     infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 50));
                                     infoLabel.setTextFill(Color.WHITE);
+                                    Label roomIdLabel = new Label("Welcome to room " + roomId);
+                                    roomIdLabel.setFont(Font.font("Arial", FontWeight.BOLD, 30));
+                                    roomIdLabel.setTextFill(Color.WHITE);
                                     vbox.getChildren().clear();
-                                    vbox.getChildren().addAll(title, infoLabel);
-                                    vbox.setSpacing(172);
+                                    vbox.getChildren().addAll(title, roomIdLabel, infoLabel);
+                                    vbox.setSpacing(100);
                     
                                     clientThread.start();
                                 } else {
