@@ -112,10 +112,10 @@ class GameTimer extends AnimationTimer{
 		}
 		this.checkBulletPlayerCollision();
 
-		// if (this.player.getIsAlive() == false) {
-		// 	this.stop();
-		// 	this.gameOver();
-		// }
+		for (Player player: players)
+		if (player.getIsAlive() == false) {
+			players.remove(player);
+		}
 	}
 	
 	private void movePlayers() {
@@ -203,13 +203,10 @@ class GameTimer extends AnimationTimer{
 		for (int i=GameTimer.START_MAP_WIDTH; i+GameTimer.SPRITE_SIZE < GameTimer.END_MAP_WIDTH; i = i + GameTimer.SPRITE_SIZE) {
 			if (i == GameTimer.START_MAP_WIDTH || i+GameTimer.SPRITE_SIZE*2 > GameTimer.END_MAP_WIDTH) {
 				for (int j=GameTimer.START_MAP_HEIGHT; j+GameTimer.SPRITE_SIZE < GameTimer.END_MAP_HEIGHT; j = j + GameTimer.SPRITE_SIZE) {
-					if (j == GameTimer.START_MAP_HEIGHT || j+GameTimer.SPRITE_SIZE*2 > GameTimer.END_MAP_HEIGHT) {
+					//if (j == GameTimer.START_MAP_HEIGHT || j+GameTimer.SPRITE_SIZE*2 > GameTimer.END_MAP_HEIGHT) {
 						Bush newBush = new Bush(i, j);
 						this.bush.add(newBush);
-					} else {
-						Steel newSteel = new Steel(i, j);
-						this.steel.add(newSteel);
-					}
+					//}
 				}
 				continue;
 			}
@@ -461,10 +458,11 @@ class GameTimer extends AnimationTimer{
 	void checkBulletPlayerCollision() {
 		for (int i = 0; i < this.bullet.size(); i++) {
 			Bullet bullet = this.bullet.get(i);
-			if (this.player.collidesWith(bullet)) {
+			for (Player player: players)
+			if (player.collidesWith(bullet)) {
 				this.bullet.remove(i);
-				this.player.setHealth();
-				this.player.setIsAlive();
+				player.setHealth();
+				player.setIsAlive();
 				break;
 			}
 		}
@@ -484,9 +482,9 @@ class GameTimer extends AnimationTimer{
 			player.goUp = true;
 		}else if(code.equals("S")) {
 			player.goDown = true;
-		// }else if(code.equals("SPACE") && firing.getStatus() != Animation.Status.RUNNING) {
-		// 					GameTimer.fireBullet = true;
-		// 					firing.playFromStart();
+		}else if(code.equals("SPACE")) {
+			player.isFiring = true;
+			fireBullet(player);
 		}
 	}
 
@@ -503,11 +501,9 @@ class GameTimer extends AnimationTimer{
 		}else if(code.equals("W")) {
 			player.goUp = false;
 		}else if(code.equals("S")) {
-			player.goDown = false;
-		
-		// }else if(code.equals("SPACE")) {
-		// 					GameTimer.fireBullet = false;
-		// 					firing.stop();
+			player.goDown = false;	
+		}else if(code.equals("SPACE")) {
+			player.isFiring = false;
 		}
 	}
 
@@ -539,37 +535,35 @@ class GameTimer extends AnimationTimer{
         });
     }
 
-	private void fireBullet() {
-		long currentTime = System.currentTimeMillis();
-		if (currentTime - this.player.getLastBulletFired() > this.player.getFireRate()) {
-			if (GameTimer.fireBullet) {
-				Bullet fire = new Bullet(0, 0, "");
-				if (currentFacing == "up") {
-					fire.setDirection(currentFacing);
-					fire.setVisible(true);
-					fire.setXPos(this.player.getXPos()+GameTimer.PLAYER_SIZE/2-1);
-					fire.setYPos(this.player.getYPos()-5);
-				} else if (currentFacing == "down") {
-					fire.setDirection(currentFacing);
-					fire.setVisible(true);
-					fire.setXPos(this.player.getXPos()+GameTimer.PLAYER_SIZE/2-1);
-					fire.setYPos(this.player.getYPos()+GameTimer.PLAYER_SIZE+2);
-				} else if (currentFacing == "left") {
-					fire.setDirection(currentFacing);
-					fire.setVisible(true);
-					fire.setXPos(this.player.getXPos()-5);
-					fire.setYPos(this.player.getYPos()+GameTimer.PLAYER_SIZE/2-1);
-				} else if (currentFacing == "right") {
-					fire.setDirection(currentFacing);
-					fire.setVisible(true);
-					fire.setXPos(this.player.getXPos()+GameTimer.PLAYER_SIZE+2);
-					fire.setYPos(this.player.getYPos()+GameTimer.PLAYER_SIZE/2-1);
-				}
-				this.bullet.add(fire);
-				GameTimer.fireBullet = false;
+	private void fireBullet(Player player) {
+		//long currentTime = System.currentTimeMillis();
+		//if (currentTime - player.getLastBulletFired() > player.getFireRate()) {
+			Bullet fire = new Bullet(0, 0, "");
+			if (player.currentFacing == "up") {
+				fire.setDirection(player.currentFacing);
+				fire.setVisible(true);
+				fire.setXPos(player.getXPos()+GameTimer.PLAYER_SIZE/2-1);
+				fire.setYPos(player.getYPos()-5);
+			} else if (player.currentFacing == "down") {
+				fire.setDirection(player.currentFacing);
+				fire.setVisible(true);
+				fire.setXPos(player.getXPos()+GameTimer.PLAYER_SIZE/2-1);
+				fire.setYPos(player.getYPos()+GameTimer.PLAYER_SIZE+2);
+			} else if (player.currentFacing == "left") {
+				fire.setDirection(player.currentFacing);
+				fire.setVisible(true);
+				fire.setXPos(player.getXPos()-5);
+				fire.setYPos(player.getYPos()+GameTimer.PLAYER_SIZE/2-1);
+			} else if (player.currentFacing == "right") {
+				fire.setDirection(player.currentFacing);
+				fire.setVisible(true);
+				fire.setXPos(player.getXPos()+GameTimer.PLAYER_SIZE+2);
+				fire.setYPos(player.getYPos()+GameTimer.PLAYER_SIZE/2-1);
 			}
-			this.player.setLastBulletFired(currentTime);
-    }
+			this.bullet.add(fire);
+			player.isFiring = false;
+		// 	player.setLastBulletFired(currentTime);
+    // }
 	}
 
 	private void moveBullet(Bullet fire) {
@@ -614,6 +608,7 @@ class GameTimer extends AnimationTimer{
 		for (String userId: userIds) {
 			Player player = new Player(userId, x[i], y[i]);
 			players.add(player);
+			i++;
 		}
 	}
 }
