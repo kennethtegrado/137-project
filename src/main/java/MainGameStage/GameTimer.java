@@ -478,7 +478,9 @@ class GameTimer extends AnimationTimer{
 				player.setHealth();
 				player.setIsAlive();
 				if (player.getName().equals(this.username) && player.getIsAlive())
-					connection.send("SERVER_CHAT " + username + " has " + ((int) player.getHealth()) + " remaining health.");
+					connection.send("SERVER_CHAT " + username + " has " + ((int) player.getHealth()) + " remaining health");
+				else if (player.getName().equals(this.username) && !player.getIsAlive())
+					connection.send("SERVER_CHAT " + username + " died");
 				break;
 			}
 		}
