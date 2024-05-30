@@ -70,6 +70,8 @@ class GameTimer extends AnimationTimer{
 	private Image left;
 	private Image down;
 	private Image right;
+	private String username;
+
 	GameTimer(StackPane stage, Scene scene, GraphicsContext gc, ClientConnection connection) {
 		this.game_bg = new Image(getClass().getResourceAsStream("/images/gameBg.png"));
 		this.up = new Image(getClass().getResourceAsStream("/images/tank-up.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
