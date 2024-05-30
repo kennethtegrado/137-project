@@ -191,6 +191,7 @@ public class Game {
                 username = input.getText();
                 chat.setUsername(username);
                 connection.setUsername(username);
+                gameTimer.setUsername(username);
                 System.out.println("Username: " + username);
                 
                 vbox.getChildren().clear();
