@@ -473,7 +473,7 @@ class GameTimer extends AnimationTimer{
 		for (int i = 0; i < this.bullet.size(); i++) {
 			Bullet bullet = this.bullet.get(i);
 			for (Player player: players)
-			if (player.collidesWith(bullet)) {
+			if (player.collidesWith(bullet) && bullet.getVisible()) {
 				this.bullet.remove(i);
 				player.setHealth();
 				player.setIsAlive();
