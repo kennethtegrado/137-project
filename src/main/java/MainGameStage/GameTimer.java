@@ -491,6 +491,9 @@ class GameTimer extends AnimationTimer{
 
 		for (Player x: players) 
 			if (x.getName().equals(username)) player = x;
+		
+		if (player == null) return;
+
 		player.setXPos(d);
 		player.setYPos(e);
 		if(code.equals("A")) {
@@ -512,6 +515,8 @@ class GameTimer extends AnimationTimer{
 
 		for (Player x: players) 
 			if (x.getName().equals(username)) player = x;
+
+		if (player == null) return;
 
 		player.setXPos(d);
 		player.setYPos(e);
