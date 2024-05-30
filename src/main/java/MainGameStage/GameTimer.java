@@ -217,10 +217,10 @@ class GameTimer extends AnimationTimer{
 		for (int i=GameTimer.START_MAP_WIDTH; i+GameTimer.SPRITE_SIZE < GameTimer.END_MAP_WIDTH; i = i + GameTimer.SPRITE_SIZE) {
 			if (i == GameTimer.START_MAP_WIDTH || i+GameTimer.SPRITE_SIZE*2 > GameTimer.END_MAP_WIDTH) {
 				for (int j=GameTimer.START_MAP_HEIGHT; j+GameTimer.SPRITE_SIZE < GameTimer.END_MAP_HEIGHT; j = j + GameTimer.SPRITE_SIZE) {
-					//if (j == GameTimer.START_MAP_HEIGHT || j+GameTimer.SPRITE_SIZE*2 > GameTimer.END_MAP_HEIGHT) {
+					if (j == GameTimer.START_MAP_HEIGHT || j+GameTimer.SPRITE_SIZE*2 > GameTimer.END_MAP_HEIGHT) {
 						Bush newBush = new Bush(i, j);
 						this.bush.add(newBush);
-					//}
+					}
 				}
 				continue;
 			}
