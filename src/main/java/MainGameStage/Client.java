@@ -23,7 +23,7 @@ public class Client implements Runnable {
             String[] result = message.split(" ");
             String code = result[0];
             
-            if (!message.startsWith("KEY_PRESS") || !message.startsWith("KEY_RELEASE"))
+            if (!message.startsWith("KEY_PRESS") && !message.startsWith("KEY_RELEASE"))
                 System.out.println(message);
 
             if (code.equals("START_GAME")) {  // Use equals for string comparison

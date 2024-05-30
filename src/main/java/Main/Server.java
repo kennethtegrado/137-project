@@ -47,7 +47,7 @@ public class Server {
                 while (true) {
                     String request = in.readUTF();
                     
-                    if (!request.startsWith("KEY_PRESS") || !request.startsWith("KEY_RELEASE"))
+                    if (!request.startsWith("KEY_PRESS") && !request.startsWith("KEY_RELEASE"))
                         System.out.println(request);
 
                     if (request.startsWith("CREATE_ROOM")) {
