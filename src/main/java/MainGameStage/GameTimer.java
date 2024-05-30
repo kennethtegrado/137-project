@@ -66,6 +66,8 @@ class GameTimer extends AnimationTimer{
 	private Image left;
 	private Image down;
 	private Image right;
+	private String username;
+
 	GameTimer(Stage stage, Scene scene, GraphicsContext gc, ClientConnection connection) {
 		this.game_bg = new Image(getClass().getResourceAsStream("/images/gameBg.png"));
 		this.up = new Image(getClass().getResourceAsStream("/images/tank-up.png"), GameTimer.PLAYER_SIZE, GameTimer.PLAYER_SIZE, false, false);
@@ -468,12 +470,13 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	public void handleKeyPress(String username, String code) {
+	public void handleKeyPress(String username, String code, double d, double e) {
 		Player player = null;
 
 		for (Player x: players) 
 			if (x.getName().equals(username)) player = x;
-
+		player.setXPos(d);
+		player.setYPos(e);
 		if(code.equals("A")) {
 			player.goLeft = true;
 		}else if(code.equals("D")) {
@@ -488,12 +491,14 @@ class GameTimer extends AnimationTimer{
 		}
 	}
 
-	public void handleKeyRelease(String username, String code) {
+	public void handleKeyRelease(String username, String code, double d, double e) {
 		Player player = null;
 
 		for (Player x: players) 
 			if (x.getName().equals(username)) player = x;
 
+		player.setXPos(d);
+		player.setYPos(e);
 		if(code.equals("A")) {
 			player.goLeft = false;
 		}else if(code.equals("D")) {
@@ -519,8 +524,9 @@ class GameTimer extends AnimationTimer{
             public void handle(KeyEvent e)
             {
                 String code = e.getCode().toString();
-				if (code.equals("A") || code.equals("S") || code.equals("W") || code.equals("D") || code.equals("SPACE"))
-					connection.pressKey(code);
+				if (code.equals("A") || code.equals("S") || code.equals("W") || code.equals("D") || code.equals("SPACE")) {
+					connection.pressKey(code + " " + player.getXPos() + " " + player.getYPos());
+				}
             }
         });
     	this.scene.setOnKeyReleased(new EventHandler<KeyEvent>()
@@ -530,7 +536,7 @@ class GameTimer extends AnimationTimer{
                 String code = e.getCode().toString();
 				
 				if (code.equals("A") || code.equals("S") || code.equals("W") || code.equals("D") || code.equals("SPACE"))
-					connection.releaseKey(code);
+					connection.releaseKey(code + " " + player.getXPos() + " " + player.getYPos());
             }
         });
     }
@@ -604,11 +610,15 @@ class GameTimer extends AnimationTimer{
 		int i = 0;
 		Integer []x = {55, 1105, 55, 1105};
 		Integer[]y = {50, 50, 715, 715};
-
 		for (String userId: userIds) {
 			Player player = new Player(userId, x[i], y[i]);
+			if (userId.equals(this.username)) this.player = player;
 			players.add(player);
 			i++;
 		}
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
 	}
 }
